@@ -179,11 +179,10 @@ function aboutPage() {
       <p class="eyebrow">About</p>
       <h1>A simple way to track habits.</h1>
 <p>
-  pprclp is a minimal web app designed to help track your daily habits.
+  pprclp is a minimal web app built to help make daily habits visible.
   Inspired by the
   <a href="https://jamesclear.com/paper-clips" target="_blank" rel="noopener noreferrer">paper clip method</a>,
-  it's absolutely free and does not track a single keystroke, tap, or share.
-  The way the internet should be.
+  it uses simple visual momentum to turn consistency into something you can actually see. It's absolutely free and does not track a single keystroke, tap, or share. The way useful internet tools should be.
 </p>    </section>
   `;
 }
