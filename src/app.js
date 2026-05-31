@@ -163,7 +163,7 @@ function homePage() {
   return `
     <section class="hero page-panel">
       <p class="eyebrow">Small actions, visible momentum.</p>
-      <h1>Build better habits with pprclp.</h1>
+      <h1>Track habits with pprclp.</h1>
       <p class="hero-copy">A simple daily habit tracker inspired by the paper clip method.</p>
       <div class="hero-actions">
         <button class="primary-button" data-nav="${state.user ? 'dashboard' : 'signup'}" type="button">Get Started</button>
@@ -177,10 +177,14 @@ function aboutPage() {
   return `
     <section class="page-panel text-page">
       <p class="eyebrow">About</p>
-      <h1>A quieter way to keep promises to yourself.</h1>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer non magna vitae leo tincidunt vestibulum. Donec tempor, justo at suscipit dignissim, neque lectus porttitor lectus, vitae interdum est lacus eget sem.</p>
-      <p>Praesent sed augue at ipsum luctus pretium. Curabitur posuere, turpis at commodo viverra, arcu sapien sagittis lorem, vitae blandit nibh lorem sit amet erat.</p>
-    </section>
+      <h1>A simple way to track habits.</h1>
+<p>
+  pprclp is a minimal web app designed to help track your daily habits.
+  Inspired by the
+  <a href="https://jamesclear.com/paper-clips" target="_blank" rel="noopener noreferrer">paper clip method</a>,
+  it's absolutely free and does not track a single keystroke, tap, or share.
+  The way the internet should be.
+</p>    </section>
   `;
 }
 
@@ -246,7 +250,7 @@ function dashboardPage() {
             <div class="habit-topline">
               <button class="habit-row" data-expand-habit="${habit.id}" type="button">
                 <span>${escapeHtml(habit.name)}</span>
-                <strong>${habit.current_streak}</strong>
+                <strong>🔥 ${habit.current_streak}</strong>
               </button>
               <button class="trash-button" data-delete-prompt="${habit.id}" aria-label="Delete ${escapeHtml(habit.name)}" type="button">×</button>
             </div>
@@ -259,9 +263,9 @@ function dashboardPage() {
 
   const addControl = state.isAdding ? `
     <form class="add-habit-form" data-form="add-habit">
-      <input autofocus aria-label="New habit name" name="habit_name" placeholder="Daily walk" />
+      <input autofocus aria-label="New habit name" name="habit_name" placeholder="Watch Seinfeld" />
       <button aria-label="Save habit" type="submit">+</button>
-    </form>` : '<button class="add-button" data-action="show-add" type="button">Add +</button>';
+    </form>` : '<button class="add-button" data-action="show-add" type="button">Add Habit +</button>';
 
   return `
     <section class="dashboard page-panel compact-panel">
@@ -365,7 +369,7 @@ async function answerHabit(habitId, completed) {
     .single();
 
   if (logError) {
-    state.message = logError.code === '23505' ? 'This habit has already been answered today.' : logError.message;
+    state.message = logError.code === '23505' ? 'This habit has already been logged today.' : logError.message;
     state.busyHabitId = null;
     state.expandedHabitId = null;
     render();
