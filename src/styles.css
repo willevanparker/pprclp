@@ -47,6 +47,7 @@ button:disabled {
 }
 
 .brand,
+.menu-popover button,
 .nav-links button,
 .text-button {
   border: 0;
@@ -61,23 +62,58 @@ button:disabled {
   letter-spacing: -0.05em;
 }
 
-.nav-links {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
+.menu-wrap {
+  position: relative;
 }
 
-.nav-links button {
+.hamburger-button {
+  display: inline-grid;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  place-content: center;
+  border: 1px solid #dfdbd2;
   border-radius: 999px;
-  padding: 8px 11px;
-  color: #68645c;
-  font-size: 0.9rem;
+  background: #fffefb;
+  color: #1b1b18;
 }
 
-.nav-links button.active,
-.nav-links button:hover {
+.hamburger-button span {
+  display: block;
+  width: 17px;
+  height: 1px;
+  background: currentColor;
+}
+
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  display: none;
+  min-width: 160px;
+  border: 1px solid #dfdbd2;
+  border-radius: 18px;
+  background: #fffefb;
+  padding: 8px;
+}
+
+.menu-popover.open {
+  display: grid;
+  gap: 2px;
+}
+
+.menu-popover button {
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #68645c;
+  font-size: 0.94rem;
+  text-align: left;
+}
+
+.menu-popover button.active,
+.menu-popover button:hover {
   color: #1b1b18;
   background: #eeebe4;
 }
@@ -133,7 +169,8 @@ h1 {
 .secondary-button,
 .add-button,
 .add-habit-form button,
-.answer-actions button {
+.answer-actions button,
+.danger-button {
   border: 1px solid #1f1e1b;
   border-radius: 999px;
   padding: 12px 20px;
@@ -238,8 +275,52 @@ input:focus {
   background: #fffefb;
 }
 
+.swipe-shell {
+  position: relative;
+  overflow: hidden;
+  background: #fff1ee;
+}
+
+.delete-reveal {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  width: 92px;
+  place-items: center;
+  background: #fff1ee;
+}
+
+.delete-reveal button,
+.danger-button {
+  border-color: #9f2f24;
+  background: #9f2f24;
+  color: #fffefb;
+}
+
+.delete-reveal button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 0.86rem;
+}
+
+.habit-foreground {
+  position: relative;
+  z-index: 1;
+  background: #fffefb;
+  transition: transform 160ms ease;
+  touch-action: pan-y;
+}
+
+.habit-topline {
+  display: flex;
+  align-items: stretch;
+}
+
 .habit-row {
   display: flex;
+  flex: 1;
+  min-width: 0;
   width: 100%;
   align-items: center;
   justify-content: space-between;
@@ -247,8 +328,27 @@ input:focus {
   border: 0;
   background: transparent;
   color: #1b1b18;
-  padding: 18px 20px;
+  padding: 18px 12px 18px 20px;
   text-align: left;
+}
+
+.trash-button {
+  display: none;
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  margin-right: 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #9f2f24;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.trash-button:hover {
+  border-color: #f0d2cc;
+  background: #fff1ee;
 }
 
 .habit-row span {
@@ -317,6 +417,48 @@ input:focus {
   text-align: center;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(27, 27, 24, 0.18);
+  padding: 20px;
+}
+
+.confirm-dialog {
+  width: min(100%, 360px);
+  border: 1px solid #dfdbd2;
+  border-radius: 22px;
+  background: #fffefb;
+  padding: 22px;
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.confirm-dialog p {
+  margin: 10px 0 20px;
+  color: #625d54;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.confirm-actions button {
+  padding-inline: 14px;
+}
+
 @media (min-width: 680px) {
   .app-shell {
     padding: 28px;
@@ -332,5 +474,10 @@ input:focus {
 
   .compact-panel {
     padding: 34px 28px 52px;
+  }
+
+  .trash-button {
+    display: inline-grid;
+    place-items: center;
   }
 }

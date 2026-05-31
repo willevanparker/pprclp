@@ -20,7 +20,13 @@ const state = {
   dashboardLoading: false,
   busyHabitId: null,
   message: '',
+  menuOpen: false,
+  openDeleteHabitId: null,
+  confirmDeleteHabitId: null,
 };
+
+let swipeGesture = null;
+let suppressNextHabitClickUntil = 0;
 
 const root = document.getElementById('root');
 
@@ -48,6 +54,9 @@ function navigate(route) {
   state.route = routes.has(route) ? route : 'home';
   window.history.pushState({}, '', state.route === 'home' ? '/' : `/${state.route}`);
   state.message = '';
+  state.menuOpen = false;
+  state.openDeleteHabitId = null;
+  state.confirmDeleteHabitId = null;
   render();
   if (state.route === 'dashboard') loadDashboard();
 }
@@ -116,12 +125,15 @@ async function logout() {
   state.profile = null;
   state.habits = [];
   state.logsByHabit = {};
+  state.menuOpen = false;
+  state.openDeleteHabitId = null;
+  state.confirmDeleteHabitId = null;
   navigate('home');
 }
 
 function shell(content) {
   const active = (route) => (state.route === route ? 'active' : '');
-  const authedNav = state.user
+  const menuItems = state.user
     ? `<button class="${active('dashboard')}" data-nav="dashboard" type="button">Dashboard</button><button data-action="logout" type="button">Log Out</button>`
     : `<button class="${active('login')}" data-nav="login" type="button">Log In</button>`;
 
@@ -129,11 +141,18 @@ function shell(content) {
     <div class="app-shell">
       <header class="site-header">
         <button class="brand" data-nav="${state.user ? 'dashboard' : 'home'}" type="button">pprclp</button>
-        <nav class="nav-links" aria-label="Primary navigation">
-          <button class="${active('home')}" data-nav="home" type="button">Home</button>
-          <button class="${active('about')}" data-nav="about" type="button">About</button>
-          ${authedNav}
-        </nav>
+        <div class="menu-wrap">
+          <button class="hamburger-button" data-menu-toggle="true" aria-label="Open navigation menu" aria-expanded="${state.menuOpen}" type="button">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <nav class="menu-popover ${state.menuOpen ? 'open' : ''}" aria-label="Primary navigation">
+            <button class="${active('home')}" data-nav="home" type="button">Home</button>
+            <button class="${active('about')}" data-nav="about" type="button">About</button>
+            ${menuItems}
+          </nav>
+        </div>
       </header>
       <main>${content}</main>
     </div>
@@ -202,8 +221,10 @@ function dashboardPage() {
   }
 
   const today = todayISO();
+  const habitBeingDeleted = state.habits.find((habit) => habit.id === state.confirmDeleteHabitId);
   const habits = state.habits.map((habit) => {
     const expanded = state.expandedHabitId === habit.id;
+    const deleteOpen = state.openDeleteHabitId === habit.id;
     const log = state.logsByHabit[habit.id];
     const response = !expanded ? '' : `
       <div class="habit-response">
@@ -216,12 +237,22 @@ function dashboardPage() {
       </div>`;
 
     return `
-      <article class="habit-card ${expanded ? 'expanded' : ''}">
-        <button class="habit-row" data-expand-habit="${habit.id}" type="button">
-          <span>${escapeHtml(habit.name)}</span>
-          <strong>${habit.current_streak}</strong>
-        </button>
-        ${response}
+      <article class="habit-card ${expanded ? 'expanded' : ''} ${deleteOpen ? 'delete-open' : ''}" data-habit-card="${habit.id}">
+        <div class="swipe-shell">
+          <div class="delete-reveal" aria-hidden="${deleteOpen ? 'false' : 'true'}">
+            <button data-delete-prompt="${habit.id}" type="button">Delete</button>
+          </div>
+          <div class="habit-foreground" data-swipe-habit="${habit.id}" style="transform: translateX(${deleteOpen ? '-92px' : '0'});">
+            <div class="habit-topline">
+              <button class="habit-row" data-expand-habit="${habit.id}" type="button">
+                <span>${escapeHtml(habit.name)}</span>
+                <strong>${habit.current_streak}</strong>
+              </button>
+              <button class="trash-button" data-delete-prompt="${habit.id}" aria-label="Delete ${escapeHtml(habit.name)}" type="button">×</button>
+            </div>
+            ${response}
+          </div>
+        </div>
       </article>
     `;
   }).join('');
@@ -238,6 +269,17 @@ function dashboardPage() {
       <div class="habit-list" aria-live="polite">${habits}</div>
       ${addControl}
       ${state.message ? `<p class="form-message center-message">${escapeHtml(state.message)}</p>` : ''}
+      ${habitBeingDeleted ? `
+        <div class="modal-backdrop" role="presentation" data-delete-cancel="true">
+          <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+            <h2 id="delete-title">Delete this habit?</h2>
+            <p>${escapeHtml(habitBeingDeleted.name)} and its daily logs will be removed.</p>
+            <div class="confirm-actions">
+              <button class="secondary-button" data-delete-cancel="true" type="button">Cancel</button>
+              <button class="danger-button" data-delete-confirm="${habitBeingDeleted.id}" type="button">Delete</button>
+            </div>
+          </div>
+        </div>` : ''}
     </section>
   `;
 }
@@ -300,6 +342,7 @@ async function createHabit(form) {
   } else {
     state.habits = [...state.habits, data];
     state.isAdding = false;
+    state.openDeleteHabitId = null;
     state.message = '';
   }
   render();
@@ -348,6 +391,29 @@ async function answerHabit(habitId, completed) {
   render();
 }
 
+async function deleteHabit(habitId) {
+  const habit = state.habits.find((item) => item.id === habitId);
+  if (!habit || !state.user) return;
+
+  const previousHabits = state.habits;
+  const previousLogs = state.logsByHabit;
+  state.habits = state.habits.filter((item) => item.id !== habitId);
+  state.logsByHabit = Object.fromEntries(Object.entries(state.logsByHabit).filter(([id]) => id !== habitId));
+  state.expandedHabitId = null;
+  state.openDeleteHabitId = null;
+  state.confirmDeleteHabitId = null;
+  state.message = '';
+  render();
+
+  const { error } = await supabase.from('habits').delete().eq('id', habitId);
+  if (error) {
+    state.habits = previousHabits;
+    state.logsByHabit = previousLogs;
+    state.message = error.message;
+    render();
+  }
+}
+
 function render() {
   const page = state.route === 'about'
     ? aboutPage()
@@ -365,19 +431,114 @@ root.addEventListener('click', (event) => {
   const target = event.target.closest('button');
   if (!target) return;
 
-  if (target.dataset.nav) navigate(target.dataset.nav);
-  if (target.dataset.action === 'logout') logout();
+  if (target.dataset.menuToggle) {
+    state.menuOpen = !state.menuOpen;
+    render();
+    return;
+  }
+
+  if (target.dataset.nav) {
+    navigate(target.dataset.nav);
+    return;
+  }
+
+  if (target.dataset.action === 'logout') {
+    state.menuOpen = false;
+    logout();
+    return;
+  }
+
+  if (target.dataset.deletePrompt) {
+    state.confirmDeleteHabitId = target.dataset.deletePrompt;
+    state.openDeleteHabitId = null;
+    state.expandedHabitId = null;
+    render();
+    return;
+  }
+
+  if (target.dataset.deleteCancel) {
+    state.confirmDeleteHabitId = null;
+    state.openDeleteHabitId = null;
+    render();
+    return;
+  }
+
+  if (target.dataset.deleteConfirm) {
+    deleteHabit(target.dataset.deleteConfirm);
+    return;
+  }
+
   if (target.dataset.action === 'show-add') {
     state.isAdding = true;
     state.expandedHabitId = null;
+    state.openDeleteHabitId = null;
     render();
+    return;
   }
+
   if (target.dataset.expandHabit) {
+    if (Date.now() < suppressNextHabitClickUntil) return;
     state.isAdding = false;
+    state.openDeleteHabitId = null;
     state.expandedHabitId = state.expandedHabitId === target.dataset.expandHabit ? null : target.dataset.expandHabit;
     render();
+    return;
   }
+
   if (target.dataset.answer) answerHabit(target.dataset.habitId, target.dataset.answer === 'yes');
+});
+
+root.addEventListener('pointerdown', (event) => {
+  if (event.pointerType === 'mouse') return;
+  if (event.target.closest('[data-delete-prompt], [data-answer], [data-delete-cancel], [data-delete-confirm]')) return;
+
+  const foreground = event.target.closest('[data-swipe-habit]');
+  if (!foreground) return;
+
+  swipeGesture = {
+    habitId: foreground.dataset.swipeHabit,
+    startX: event.clientX,
+    currentX: event.clientX,
+    startY: event.clientY,
+    moved: false,
+    foreground,
+  };
+});
+
+root.addEventListener('pointermove', (event) => {
+  if (!swipeGesture) return;
+
+  const deltaX = Math.min(0, event.clientX - swipeGesture.startX);
+  const deltaY = Math.abs(event.clientY - swipeGesture.startY);
+  if (deltaY > 40 && Math.abs(deltaX) < 25) return;
+
+  swipeGesture.currentX = event.clientX;
+  if (Math.abs(deltaX) > 8) swipeGesture.moved = true;
+  if (!swipeGesture.moved) return;
+
+  event.preventDefault();
+  state.openDeleteHabitId = null;
+  const offset = Math.max(deltaX, -104);
+  swipeGesture.foreground.style.transform = `translateX(${offset}px)`;
+}, { passive: false });
+
+root.addEventListener('pointerup', () => {
+  if (!swipeGesture) return;
+
+  const deltaX = swipeGesture.currentX - swipeGesture.startX;
+  if (swipeGesture.moved) {
+    suppressNextHabitClickUntil = Date.now() + 350;
+    state.openDeleteHabitId = deltaX < -48 ? swipeGesture.habitId : null;
+    state.expandedHabitId = deltaX < -48 ? null : state.expandedHabitId;
+    render();
+  }
+
+  swipeGesture = null;
+});
+
+root.addEventListener('pointercancel', () => {
+  swipeGesture = null;
+  render();
 });
 
 root.addEventListener('submit', (event) => {
@@ -385,6 +546,13 @@ root.addEventListener('submit', (event) => {
   const form = event.target;
   if (form.dataset.form === 'auth') handleAuthSubmit(form);
   if (form.dataset.form === 'add-habit') createHabit(form);
+});
+
+
+document.addEventListener('click', (event) => {
+  if (!state.menuOpen || event.target.closest('.menu-wrap')) return;
+  state.menuOpen = false;
+  render();
 });
 
 window.addEventListener('popstate', () => {

@@ -67,4 +67,5 @@ All required SQL lives in [`supabase/schema.sql`](supabase/schema.sql), includin
 - `habits`, connected to `auth.users`
 - `habit_logs`, connected to both habits and users
 - `unique (habit_id, log_date)` to prevent duplicate daily answers
+- `on delete cascade` from `habit_logs.habit_id` to `habits.id` so deleted habits do not leave orphaned logs
 - Row Level Security policies so users can only access their own data

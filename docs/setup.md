@@ -65,4 +65,5 @@ Use `supabase/schema.sql` as the source of truth. It creates:
 - `habits`: `id`, `user_id`, `name`, `current_streak`, `created_at`
 - `habit_logs`: `id`, `habit_id`, `user_id`, `log_date`, `completed`, `created_at`
 - unique daily log constraint on `habit_id` and `log_date`
+- cascading deletion from habits to habit logs so deleted habits do not leave orphaned logs
 - owner-only Row Level Security policies for all three tables
