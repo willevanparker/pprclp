@@ -250,7 +250,7 @@ function dashboardPage() {
             <div class="habit-topline">
               <button class="habit-row" data-expand-habit="${habit.id}" type="button">
                 <span>${escapeHtml(habit.name)}</span>
-                <strong>🔥 ${habit.current_streak}</strong>
+                <strong>🗓️🔥 ${habit.current_streak}</strong>
               </button>
               <button class="trash-button" data-delete-prompt="${habit.id}" aria-label="Delete ${escapeHtml(habit.name)}" type="button">×</button>
             </div>
