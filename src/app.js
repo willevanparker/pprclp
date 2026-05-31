@@ -263,7 +263,7 @@ function dashboardPage() {
 
   const addControl = state.isAdding ? `
     <form class="add-habit-form" data-form="add-habit">
-      <input autofocus aria-label="New habit name" name="habit_name" placeholder="Watch Seinfeld" />
+      <input autofocus maxlength="25" aria-label="New habit name" name="habit_name" placeholder="Watch Seinfeld" />
       <button aria-label="Save habit" type="submit">+</button>
     </form>` : '<button class="add-button" data-action="show-add" type="button">Add Habit +</button>';
 
